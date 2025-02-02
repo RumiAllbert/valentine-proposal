@@ -35,9 +35,57 @@
             background: rgba(255, 255, 255, 0.1);
         }
 
-        @keyframes fadeIn {
-            to {
+        .rose {
+            font-size: 4em;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            display: inline-block;
+        }
+
+        .rose:hover {
+            transform: scale(1.1);
+        }
+
+        @keyframes expandRose {
+            0% {
+                transform: translate(-50%, -50%) scale(1);
                 opacity: 1;
+            }
+
+            50% {
+                transform: translate(-50%, -50%) scale(20);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(40);
+                opacity: 0;
+            }
+        }
+
+        .expanding-rose {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2em;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.9);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
             }
         }
 
@@ -90,6 +138,18 @@
                 transform: translateX(-10px);
             }
         }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+
+            to {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.9);
+            }
+        }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
 </head>
@@ -97,6 +157,11 @@
 <body>
     <div id="canvas-container"></div>
     <div class="message">
+        <h1 style="font-size: 3em">Mi amor, <br>take this flower...</h1>
+        <div class="rose" onclick="expandRose()">🌹</div>
+    </div>
+
+    <div class="message hidden" id="valentineQuestion">
         <h1 style="font-size: 4em">Mi amor, <br>Will you be my valentines? <br>🌹</h1>
         <div class="buttons">
             <button onclick="celebrate()">Yes ♥️</button>
@@ -114,6 +179,8 @@
         // Globals to track celebration mode and rotation.
         let celebrationStarted = false;
         let celebrationRotation = 0;
+        let partyMode = false;
+        let colorPhase = 0;
 
         function init() {
             // Setup Scene and Camera
@@ -262,69 +329,170 @@
         // - Change the background.
         // - Activate celebration mode for the hearts to form a heart shape.
         function celebrate() {
-            // Update the overlay message to a coupon message with a new font.
-            const messageEl = document.querySelector('.message');
-            messageEl.innerHTML = `
-                <p style="font-size: 1.5em; font-family: 'Times New Roman', serif; color:#ff3366;">
-                    Hi; I'm sorry we can't spend this valentines together :(  <br>
-                    but i promise i will make it up to you. 🫡
-                    <br>
-                    <br>
-                    You can save this as a coupon for a later day
-                    <br>
-                    <br>
-                    te quiero mi amor ♥️
-                </p>
-                <br/>
-                <a href="coupon.png" download="ValentineCoupon.png">
-                    <button style="
-                        background: rgba(255, 51, 102, 0.15);
-                        backdrop-filter: blur(10px);
-                        border: 1px solid rgba(255, 51, 102, 0.3);
-                        padding: 0.8rem 2rem;
-                        color: #ff3366;
-                        border-radius: 20px;
-                        font-size: 1.2rem;
-                        cursor: pointer;
-                        transition: all 0.3s ease;
-                    ">
-                        coupon
-                    </button>
-                </a>
-            `;
-            // Change background.
+            // Change background immediately
             document.body.style.background = "radial-gradient(ellipse at center, #ffdde1 0%, #ee9ca7 100%)";
-            // Activate celebration mode.
+
+            // Hide the message div initially
+            const messageEl = document.querySelector('.message');
+            messageEl.style.animation = 'fadeOut 1s forwards';
+
+            // Activate celebration mode for hearts
             celebrationStarted = true;
+
+            // Wait for hearts to form (about 3 seconds) plus an extra second, then show the message
+            setTimeout(() => {
+                messageEl.innerHTML = `
+                    <p style="font-size: 1.5em; font-family: 'Times New Roman', serif; color:#ff3366;">
+                        Hi; I'm sorry we can't spend this valentines together :(  <br>
+                        but i promise i will make it up to you. 🫡
+                        <br>
+                        <br>
+                        You can save this as a coupon for a later day
+                        <br>
+                        <br>
+                        te quiero mi amor ♥️
+                    </p>
+                    <br/>
+                    <div style="display: flex; gap: 20px; justify-content: center;">
+                        <a href="coupon.png" download="ValentineCoupon.png">
+                            <button style="
+                                background: rgba(255, 51, 102, 0.15);
+                                backdrop-filter: blur(10px);
+                                border: 1px solid rgba(255, 51, 102, 0.3);
+                                padding: 0.8rem 2rem;
+                                color: #ff3366;
+                                border-radius: 20px;
+                                font-size: 1.2rem;
+                                cursor: pointer;
+                                transition: all 0.3s ease;
+                            ">
+                                coupon
+                            </button>
+                        </a>
+                        <button onclick="startParty()" style="
+                            background: rgba(255, 51, 102, 0.15);
+                            backdrop-filter: blur(10px);
+                            border: 1px solid rgba(255, 51, 102, 0.3);
+                            padding: 0.8rem 2rem;
+                            color: #ff3366;
+                            border-radius: 20px;
+                            font-size: 1.2rem;
+                            cursor: pointer;
+                            transition: all 0.3s ease;
+                        ">
+                            ♥️
+                        </button>
+                    </div>
+                `;
+                // Hide the valentine question
+                document.getElementById('valentineQuestion').style.display = 'none';
+                // Show and animate the new message
+                messageEl.style.display = 'block';
+                messageEl.style.animation = 'fadeIn 2s forwards';
+            }, 4000); // Wait 4 seconds before showing the message (3s for hearts + 1s extra)
+
+            // Hide the valentine question with fade out
+            const valentineQuestion = document.getElementById('valentineQuestion');
+            valentineQuestion.style.animation = 'fadeOut 1s forwards';
+            setTimeout(() => {
+                valentineQuestion.style.display = 'none';
+            }, 1000);
+        }
+
+        function startParty() {
+            partyMode = true;
+            const messageEl = document.querySelector('.message');
+            messageEl.style.animation = 'fadeOut 1s forwards';
+            // Change background to black
+            document.body.style.background = "black";
+            setTimeout(() => {
+                messageEl.style.display = 'none';
+            }, 1000);
         }
 
         function animate() {
             requestAnimationFrame(animate);
 
-            // Parallax effect.
+            // Parallax effect
             const targetX = (mouseX / window.innerWidth - 0.5) * 4;
             const targetY = -(mouseY / window.innerHeight - 0.5) * 4;
             camera.position.x += (targetX - camera.position.x) * 0.02;
             camera.position.y += (targetY - camera.position.y) * 0.02;
             camera.lookAt(scene.position);
 
+            // Update background particles in party mode
+            if (partyMode && particles) {
+                const particleColor = new THREE.Color();
+                const time = Date.now() * 0.001;
+                const pinkColor = new THREE.Color('#ff3366');
+                const purpleColor = new THREE.Color('#9a4dff');
+                const t = (Math.sin(time) + 1) / 2;
+                particleColor.copy(pinkColor).lerp(purpleColor, t);
+                particles.material.color = particleColor;
+                particles.material.size = 0.01 + Math.sin(time * 2) * 0.005;
+            }
+
             if (celebrationStarted) {
-                // Slower rotation and slower movement: hearts form a heart shape.
                 celebrationRotation += 0.002;
                 let num = floatingHearts.length;
-                const shapeScale = 0.2; // scale factor for heart formation
+                const shapeScale = 0.2;
                 floatingHearts.forEach((heart, index) => {
                     let t = (index / num) * 2 * Math.PI;
                     let angle = t + celebrationRotation;
-                    // Using the classic parametric heart curve:
                     let targetX = shapeScale * (16 * Math.pow(Math.sin(angle), 3));
                     let targetY = shapeScale * ((13 * Math.cos(angle) - 5 * Math.cos(2 * angle) - 2 * Math.cos(3 * angle) - Math.cos(4 * angle)) + 4);
                     let target = new THREE.Vector3(targetX, targetY, 0);
-                    // Use a lower lerp factor (0.01) for slower movement.
+
+                    // Add mouse repulsion in party mode
+                    if (partyMode) {
+                        // Convert mouse position to 3D coordinates
+                        const mouseVector = new THREE.Vector3(
+                            (mousePos.x * 5), // Scale up the effect
+                            (mousePos.y * 5),
+                            0
+                        );
+
+                        // Calculate distance between heart and mouse
+                        const distanceToMouse = mouseVector.distanceTo(heart.position);
+
+                        // Apply repulsion force if mouse is close
+                        if (distanceToMouse < 2) {
+                            const repulsionForce = 1 - (distanceToMouse / 2); // Stronger force when closer
+                            const direction = heart.position.clone().sub(mouseVector).normalize();
+                            target.add(direction.multiplyScalar(repulsionForce * 0.5));
+                        }
+                    }
+
                     heart.position.lerp(target, 0.007);
-                    // Optionally fix rotations.
                     heart.rotation.x = 0;
                     heart.rotation.y = 0;
+
+                    if (partyMode) {
+                        colorPhase += 0.001;
+                        const pulseScale = 1 + Math.sin(Date.now() * 0.003) * 0.15;
+                        heart.scale.set(0.3 * pulseScale, 0.3 * pulseScale, 0.3 * pulseScale);
+
+                        const colors = [
+                            new THREE.Color('#ff3366'),
+                            new THREE.Color('#ff4d7c'),
+                            new THREE.Color('#ff6b9d'),
+                            new THREE.Color('#ff4d7c')
+                        ];
+
+                        const t = (Math.sin(colorPhase + index * 0.1) + 1) / 2;
+                        const colorIndex = Math.floor(t * (colors.length - 1));
+                        const nextColorIndex = (colorIndex + 1) % colors.length;
+                        const mixRatio = t * (colors.length - 1) - colorIndex;
+
+                        const currentColor = colors[colorIndex].clone();
+                        const nextColor = colors[nextColorIndex].clone();
+                        const finalColor = currentColor.lerp(nextColor, mixRatio);
+
+                        heart.material.color.lerp(finalColor, 0.1);
+                        heart.material.emissive.copy(heart.material.color).multiplyScalar(0.4);
+
+                        heart.material.opacity = 0.85 + Math.sin(Date.now() * 0.002 + index) * 0.15;
+                    }
                 });
             } else {
                 // Regular floating hearts animation.
@@ -341,6 +509,25 @@
             }
 
             renderer.render(scene, camera);
+        }
+
+        function expandRose() {
+            const rose = document.createElement('div');
+            rose.textContent = '🌹';
+            rose.className = 'expanding-rose';
+            document.body.appendChild(rose);
+
+            // Start the expansion animation
+            rose.style.animation = 'expandRose 2s forwards';
+
+            // After animation, show the valentine question
+            setTimeout(() => {
+                document.querySelector('.message').classList.add('hidden');
+                const valentineQuestion = document.getElementById('valentineQuestion');
+                valentineQuestion.classList.remove('hidden');
+                valentineQuestion.style.animation = 'fadeIn 2s forwards';
+                rose.remove();
+            }, 1500);
         }
 
         init();
